@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Room {
+  id            String   @id @default(uuid()) @db.Uuid
+  shareSlug     String   @unique @map("share_slug") @db.Text
+  deleteToken   String   @unique @map("delete_token") @db.Text
+  title         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+  privacyMode   String   @default("link") @map("privacy_mode") @db.Text
+  status        String   @default("processing") @db.Text
+  errorCode     String?  @map("error_code") @db.Text
+  source        String   @default("kakao_txt") @db.Text
+
+  participants RoomParticipant[]
+  stats        RoomStats?
+  ai           RoomAI?
+
+  @@index([shareSlug])
+  @@index([deleteToken])
+  @@map("rooms")
+}
+
+model RoomParticipant {
+  id          String @id @default(uuid()) @db.Uuid
+  roomId      String @map("room_id") @db.Uuid
+  displayName String @map("display_name") @db.Text
+  alias       String @db.Text
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, displayName])
+  @@index([roomId])
+  @@map("room_participants")
+}
+
+model RoomStats {
+  roomId     String   @id @map("room_id") @db.Uuid
+  stats      Json     @db.JsonB
+  computedAt DateTime @default(now()) @map("computed_at") @db.Timestamptz(6)
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("room_stats")
+}
+
+model RoomAI {
+  roomId      String   @id @map("room_id") @db.Uuid
+  summary     Json     @db.JsonB
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  model       String   @db.Text
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("room_ai")
+}
+
