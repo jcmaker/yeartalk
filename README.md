@@ -46,8 +46,8 @@ npm install
 루트에 `.env.local`을 만들고 아래 값을 채워주세요(예시 파일이 있다면 참고).
 
 - **DB(Prisma)**
-  - `DATABASE_URL`: Supabase Postgres 연결 문자열(예: pooler/transaction 모드가 아닌 일반 연결 권장)
-  - `DIRECT_URL`: Prisma 마이그레이션/직접 연결용 URL(환경에 따라 필요)
+  - `DATABASE_URL`: Supabase Postgres 연결 문자열 (코드에서 자동으로 `pgbouncer=true` 파라미터 추가됨)
+  - `DIRECT_URL`: Prisma 마이그레이션/직접 연결용 URL (pooler 없이 직접 연결)
 - **AI(선택)**
   - `AI_ENABLED`: `"true"`일 때만 AI 요약 생성
   - `OPENAI_API_KEY`: OpenAI API 키
