@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { notFound } from "next/navigation";
-import Link from "next/link";
+import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
-import { EmblaOptionsType } from "embla-carousel";
-import { ArrowUp, Award, BarChart3, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, Award, BarChart3, Sparkles } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { GradientBackground } from "@/components/animate-ui/components/backgrounds/gradient";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,10 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { GradientBackground } from "@/components/animate-ui/components/backgrounds/gradient";
-import Image from "next/image";
 
 interface RoomData {
   id: string;
@@ -70,10 +70,197 @@ interface RoomData {
         prediction: string;
       }>;
       highlights: string[];
+      mbti?: {
+        type: string;
+        description: string;
+        traits: string[];
+      };
+      groupFortune?: {
+        group: string;
+        keywords: string[];
+      };
+      hotTopics?: Array<{
+        topic: string;
+        description: string;
+        frequency?: number;
+      }>;
     };
     generatedAt: string;
     model: string;
   } | null;
+}
+
+// 개인 운세 캐러셀(상장처럼 좌우) - 5인 이하에서만 사용
+function FortuneCarousel({
+  fortune,
+  stats,
+  getFortuneTheme,
+}: {
+  fortune: Array<{
+    participant: string;
+    prediction: string;
+  }>;
+  stats: {
+    participants: Array<{
+      displayName: string;
+      alias: string;
+      messageCount: number;
+      attachmentCount: number;
+      topTokens: {
+        laughter: number;
+        cry: number;
+        punctuation: number;
+      };
+    }>;
+  };
+  getFortuneTheme: (seed: string) => {
+    ring: string;
+    label: string;
+    glow: string;
+  };
+}) {
+  const fortuneCards = fortune.map((f, idx) => {
+    const participant = stats.participants.find(
+      (p) => p.displayName === f.participant || p.alias === f.participant,
+    );
+    return {
+      name: participant?.displayName || f.participant,
+      alias: participant?.alias ?? `${idx + 1}`,
+      prediction: f.prediction,
+    };
+  });
+
+  const carouselOptions: EmblaOptionsType = {
+    loop: false,
+    align: "center",
+    slidesToScroll: 1,
+    containScroll: "trimSnaps",
+    axis: "x",
+  };
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(carouselOptions);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const updateSelectedIndex = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", updateSelectedIndex);
+    updateSelectedIndex();
+    return () => {
+      emblaApi.off("select", updateSelectedIndex);
+    };
+  }, [emblaApi]);
+
+  return (
+    <div className="h-screen shrink-0 w-full overflow-hidden relative flex flex-col">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 shrink-0 relative z-10">
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-2xl bg-card/70 backdrop-blur-md px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground/75">
+                  참여자 {fortuneCards.length.toLocaleString()}명
+                </p>
+                <p className="mt-1 text-sm sm:text-base">
+                  <span className="font-semibold">개인 운세</span>
+                  <span className="text-muted-foreground/70">
+                    {" "}
+                    · 좌우로 넘겨서 확인하세요
+                  </span>
+                </p>
+              </div>
+              <div className="shrink-0 rounded-full bg-background/25 px-2 py-1">
+                <span className="text-[11px] text-muted-foreground/80 tabular-nums">
+                  {selectedIndex + 1}/{fortuneCards.length}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="pt-3 flex items-center justify-center gap-1.5 text-muted-foreground/60">
+            {Array.from(
+              { length: fortuneCards.length },
+              (_, dot) => dot + 1,
+            ).map((dot) => (
+              <div
+                key={dot}
+                className={[
+                  "h-1.5 w-1.5 rounded-full transition-colors",
+                  dot - 1 === selectedIndex
+                    ? "bg-primary"
+                    : "bg-muted-foreground/30",
+                ].join(" ")}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 px-4 sm:px-6 pb-3 overflow-hidden relative z-10">
+        <div className="max-w-2xl mx-auto h-full">
+          <div className="overflow-hidden h-full" ref={emblaRef}>
+            <div className="flex h-full">
+              {fortuneCards.map((t, idx) => (
+                <div
+                  key={`${t.alias}-${idx}`}
+                  className="flex-[0_0_100%] w-full h-full flex items-center justify-center"
+                >
+                  <div className="w-full">
+                    <Card
+                      className={[
+                        "relative overflow-hidden rounded-2xl border ring-1",
+                        "bg-zinc-950/70 backdrop-blur-md",
+                        getFortuneTheme(`${t.alias}-${t.name}`).ring,
+                      ].join(" ")}
+                    >
+                      <div
+                        className={[
+                          "pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full blur-2xl",
+                          "bg-linear-to-br",
+                          getFortuneTheme(`${t.alias}-${t.name}`).glow,
+                        ].join(" ")}
+                        aria-hidden="true"
+                      />
+                      <CardHeader className="pb-2 px-4 pt-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <CardTitle className="text-base sm:text-lg tracking-tight truncate">
+                              {t.name}{" "}
+                              <span className="text-muted-foreground/70 text-sm font-normal">
+                                ({t.alias})
+                              </span>
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              올해의 기록으로 본 내년의 힌트
+                            </CardDescription>
+                          </div>
+                          <div
+                            className={[
+                              "shrink-0 rounded-full px-2 py-1 text-[11px] tabular-nums",
+                              getFortuneTheme(`${t.alias}-${t.name}`).label,
+                            ].join(" ")}
+                          >
+                            #{idx + 1}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-4 pb-4">
+                        <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-foreground/95">
+                          {t.prediction}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // 상장 캐러셀 컴포넌트
@@ -100,11 +287,11 @@ function AwardsCarousel({
       };
     }>;
   };
-  mainEmblaApi: any;
+  mainEmblaApi: EmblaCarouselType | undefined;
 }) {
   const stripAwardEmoji = (title: string) => {
     return title
-      .replace(/[✅⚡😂📸😺🌙]/g, "")
+      .replace(/[✅⚡😂📸😺🌙]/gu, "")
       .replace(/\uFE0F/g, "")
       .trim();
   };
@@ -303,7 +490,7 @@ function AwardsCarousel({
             const participant = stats.participants.find(
               (p) =>
                 p.displayName === award.participant ||
-                p.alias === award.participant
+                p.alias === award.participant,
             );
             const displayName = participant?.displayName || award.participant;
             const awardIconSrc = getAwardIconSrc(award.title);
@@ -312,7 +499,7 @@ function AwardsCarousel({
 
             return (
               <div
-                key={idx}
+                key={`${award.participant}-${award.title}`}
                 className="flex-[0_0_100%] w-full h-screen flex items-center justify-center"
               >
                 <div className="w-full max-w-2xl px-4 sm:px-6">
@@ -402,12 +589,15 @@ function AwardsCarousel({
                         className="flex items-center gap-1.5"
                         aria-hidden="true"
                       >
-                        {Array.from({ length: awards.length }).map((_, i) => (
+                        {Array.from(
+                          { length: awards.length },
+                          (_, dot) => dot + 1,
+                        ).map((dot) => (
                           <div
-                            key={i}
+                            key={dot}
                             className={[
                               "h-1.5 w-1.5 rounded-full transition-colors",
-                              i === selectedIndex
+                              dot - 1 === selectedIndex
                                 ? "bg-primary"
                                 : "bg-muted-foreground/30",
                             ].join(" ")}
@@ -463,7 +653,7 @@ export default function ResultsPage({
         return !target.closest('[data-embla-no-drag="true"]');
       },
     }),
-    []
+    [],
   );
 
   const [emblaRef, emblaApi] = useEmblaCarousel(OPTIONS);
@@ -524,7 +714,7 @@ export default function ResultsPage({
     document.documentElement.classList.remove("light");
   }, []);
 
-  const formatSeoulTime = (tsIso: string) => {
+  const formatSeoulTime = useCallback((tsIso: string) => {
     try {
       return new Intl.DateTimeFormat("ko-KR", {
         timeZone: "Asia/Seoul",
@@ -535,7 +725,7 @@ export default function ResultsPage({
     } catch {
       return "";
     }
-  };
+  }, []);
 
   const formatWeekdayKo = (weekdayIndex: number) => {
     const map = ["일", "월", "화", "수", "목", "금", "토"];
@@ -585,7 +775,7 @@ export default function ResultsPage({
     const topHour = pickTop(entriesHour);
     const topWeekday = pickTop(entriesWeekday);
     const topBurst = [...(s.bursts || [])].sort(
-      (a, b) => b.messageCount - a.messageCount
+      (a, b) => b.messageCount - a.messageCount,
     )[0];
 
     const topHourNum = topHour ? Number.parseInt(topHour.key, 10) : null;
@@ -612,7 +802,7 @@ export default function ResultsPage({
           }
         : null,
     };
-  }, [room?.stats]);
+  }, [room?.stats, formatSeoulTime]);
 
   const getFortuneTheme = (seed: string) => {
     const palette = [
@@ -717,18 +907,18 @@ export default function ResultsPage({
   };
 
   const participantsSorted = [...stats.participants].sort(
-    (a, b) => b.messageCount - a.messageCount
+    (a, b) => b.messageCount - a.messageCount,
   );
   const maxMessages = Math.max(
     ...participantsSorted.map((p) => p.messageCount),
-    1
+    1,
   );
   const topParticipantOverall = participantsSorted[0] ?? null;
 
   const participantsPages = chunk(participantsSorted, 8);
 
   const topBy = (
-    key: "laughter" | "cry" | "punctuation"
+    key: "laughter" | "cry" | "punctuation",
   ): (typeof stats.participants)[number] | null => {
     if (stats.participants.length === 0) return null;
     return stats.participants.reduce((best, cur) => {
@@ -744,16 +934,19 @@ export default function ResultsPage({
   const slides = [
     // Welcome 슬라이드
     {
+      id: "welcome",
       type: "welcome" as const,
       content: null,
     },
     // 통계 안내 슬라이드
     {
+      id: "stats-intro",
       type: "stats-intro" as const,
       content: null,
     },
     // 참여자 랭킹 (여러 페이지로 분리 - 스크롤 없이 전부 보기)
     ...participantsPages.map((page, pageIndex) => ({
+      id: `stats-participants-${pageIndex}`,
       type: "stats-participants" as const,
       content: {
         pageIndex,
@@ -766,6 +959,7 @@ export default function ResultsPage({
     })),
     // 자주 쓰는 표현 (별도 화면)
     {
+      id: "stats-tokens",
       type: "stats-tokens" as const,
       content: {
         totalParticipants: participantsSorted.length,
@@ -778,6 +972,7 @@ export default function ResultsPage({
     ...(fixedAwards.length > 0
       ? [
           {
+            id: "awards-intro",
             type: "awards-intro" as const,
             content: null,
           },
@@ -787,31 +982,92 @@ export default function ResultsPage({
     ...(fixedAwards.length > 0
       ? [
           {
+            id: "awards",
             type: "awards" as const,
             content: fixedAwards,
           },
         ]
       : []),
-    // 운세 안내 슬라이드
-    ...(ai?.fortune && ai.fortune.length > 0
+    // 개인 운세(5인 이하에서만)
+    ...(stats.participants.length <= 5 && ai?.fortune && ai.fortune.length > 0
       ? [
           {
+            id: "fortune-intro",
             type: "fortune-intro" as const,
             content: null,
           },
         ]
       : []),
-    // 운세 콘텐츠 슬라이드
-    ...(ai?.fortune && ai.fortune.length > 0
+    ...(stats.participants.length <= 5 && ai?.fortune && ai.fortune.length > 0
       ? [
           {
+            id: "fortune",
             type: "fortune" as const,
             content: ai.fortune,
           },
         ]
       : []),
+    // 단체 운세(개인 운세 다음에 배치)
+    ...(ai?.groupFortune
+      ? [
+          {
+            id: "group-fortune-intro",
+            type: "group-fortune-intro" as const,
+            content: null,
+          },
+        ]
+      : []),
+    ...(ai?.groupFortune
+      ? [
+          {
+            id: "group-fortune",
+            type: "group-fortune" as const,
+            content: ai.groupFortune,
+          },
+        ]
+      : []),
+    // MBTI (단체 운세 다음)
+    ...(ai?.mbti
+      ? [
+          {
+            id: "mbti-intro",
+            type: "mbti-intro" as const,
+            content: null,
+          },
+        ]
+      : []),
+    ...(ai?.mbti
+      ? [
+          {
+            id: "mbti",
+            type: "mbti" as const,
+            content: ai.mbti,
+          },
+        ]
+      : []),
+    // 핫토픽 안내 슬라이드
+    ...(ai?.hotTopics && ai.hotTopics.length > 0
+      ? [
+          {
+            id: "hot-topics-intro",
+            type: "hot-topics-intro" as const,
+            content: null,
+          },
+        ]
+      : []),
+    // 핫토픽 콘텐츠 슬라이드
+    ...(ai?.hotTopics && ai.hotTopics.length > 0
+      ? [
+          {
+            id: "hot-topics",
+            type: "hot-topics" as const,
+            content: ai.hotTopics,
+          },
+        ]
+      : []),
     // 공유 슬라이드 (마지막)
     {
+      id: "share",
       type: "share" as const,
       content: null,
     },
@@ -846,7 +1102,6 @@ export default function ResultsPage({
           fill: "bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300",
           pill: "bg-violet-500/10 text-violet-200",
         } as const;
-      case "welcome":
       default:
         return {
           track: "bg-emerald-500/10",
@@ -856,7 +1111,7 @@ export default function ResultsPage({
     }
   })();
 
-  const renderSlide = (slide: (typeof slides)[0], index: number) => {
+  const renderSlide = (slide: (typeof slides)[number]) => {
     if (slide.type === "welcome") {
       return (
         <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
@@ -942,7 +1197,7 @@ export default function ResultsPage({
                 <p className="mt-1 text-base sm:text-lg font-semibold tracking-tight">
                   {statsInsights.topHour
                     ? `${formatHourKo(
-                        statsInsights.topHour.hour
+                        statsInsights.topHour.hour,
                       )} · ${statsInsights.topHour.count.toLocaleString()}`
                     : "-"}
                 </p>
@@ -954,7 +1209,7 @@ export default function ResultsPage({
                 <p className="mt-1 text-base sm:text-lg font-semibold tracking-tight">
                   {statsInsights.topWeekday
                     ? `${formatWeekdayKo(
-                        statsInsights.topWeekday.weekday
+                        statsInsights.topWeekday.weekday,
                       )}요일 · ${statsInsights.topWeekday.count.toLocaleString()}`
                     : "-"}
                 </p>
@@ -1033,16 +1288,16 @@ export default function ResultsPage({
                     const rank = pageStartRank + idx + 1;
                     const widthPct = Math.max(
                       8,
-                      Math.round((p.messageCount / c.maxMessages) * 100)
+                      Math.round((p.messageCount / c.maxMessages) * 100),
                     );
                     const rankBadge =
                       rank === 1
                         ? "bg-amber-400/20 text-amber-200 ring-1 ring-amber-300/30"
                         : rank === 2
-                        ? "bg-slate-400/20 text-slate-100 ring-1 ring-slate-300/30"
-                        : rank === 3
-                        ? "bg-orange-400/15 text-orange-200 ring-1 ring-orange-300/25"
-                        : "bg-background/20 text-muted-foreground/80 ring-1 ring-border/20";
+                          ? "bg-slate-400/20 text-slate-100 ring-1 ring-slate-300/30"
+                          : rank === 3
+                            ? "bg-orange-400/15 text-orange-200 ring-1 ring-orange-300/25"
+                            : "bg-background/20 text-muted-foreground/80 ring-1 ring-border/20";
 
                     return (
                       <div
@@ -1093,32 +1348,36 @@ export default function ResultsPage({
                       </div>
                     );
                   })}
-                  {/* 빈 칸 채우기(마지막 페이지 레이아웃 고정) */}
-                  {Array.from({
-                    length: Math.max(0, 8 - c.participants.length),
-                  }).map((_, i) => (
-                    <div
-                      key={`empty-${i}`}
-                      className="rounded-2xl bg-background/10 ring-1 ring-border/10"
-                      aria-hidden="true"
-                    />
-                  ))}
+                  {/* 빈 칸 채우기(마지막 페이지 레이아웃 고정) - 인원이 8명 이상일 때만 */}
+                  {c.participants.length >= 8 &&
+                    Array.from(
+                      { length: Math.max(0, 8 - c.participants.length) },
+                      (_, n) => `empty-${c.pageIndex}-${n}`,
+                    ).map((id) => (
+                      <div
+                        key={id}
+                        className="rounded-2xl bg-background/10 ring-1 ring-border/10"
+                        aria-hidden="true"
+                      />
+                    ))}
                 </div>
               </div>
 
               <div className="pt-3 flex items-center justify-center gap-1.5 text-muted-foreground/60">
-                {Array.from({ length: c.pageCount }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={[
-                      "h-1.5 w-1.5 rounded-full transition-colors",
-                      i === c.pageIndex
-                        ? "bg-primary"
-                        : "bg-muted-foreground/30",
-                    ].join(" ")}
-                    aria-hidden="true"
-                  />
-                ))}
+                {Array.from({ length: c.pageCount }, (_, dot) => dot + 1).map(
+                  (dot) => (
+                    <div
+                      key={dot}
+                      className={[
+                        "h-1.5 w-1.5 rounded-full transition-colors",
+                        dot - 1 === c.pageIndex
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    />
+                  ),
+                )}
               </div>
             </div>
           </div>
@@ -1377,7 +1636,7 @@ export default function ResultsPage({
                   팁
                 </p>
                 <p className="mt-1 text-base sm:text-lg font-semibold">
-                  아래로 스크롤
+                  좌우 스와이프
                 </p>
               </div>
             </div>
@@ -1391,93 +1650,200 @@ export default function ResultsPage({
     }
 
     if (slide.type === "fortune" && slide.content) {
-      const fortune = slide.content;
-      const fortuneCards = fortune.map((f, idx) => {
-        const participant = stats.participants.find(
-          (p) => p.displayName === f.participant || p.alias === f.participant
-        );
-        return {
-          name: participant?.displayName || f.participant,
-          alias: participant?.alias ?? `${idx + 1}`,
-          prediction: f.prediction,
-        };
-      });
-
       return (
-        <div className="h-screen shrink-0 w-full overflow-hidden flex flex-col relative">
-          <div className="px-4 sm:px-6 py-4 sm:py-6 shrink-0 relative z-10">
-            <div className="max-w-2xl mx-auto">
-              <div className="rounded-2xl bg-card/70 backdrop-blur-md px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground/75">
-                      참여자 {fortuneCards.length.toLocaleString()}명
-                    </p>
-                    <p className="mt-1 text-sm sm:text-base">
-                      <span className="font-semibold">운세 카드</span>
-                      <span className="text-muted-foreground/70">
-                        {" "}
-                        · 아래로 스크롤해서 모두 확인하세요
-                      </span>
-                    </p>
+        <FortuneCarousel
+          fortune={slide.content}
+          stats={stats}
+          getFortuneTheme={getFortuneTheme}
+        />
+      );
+    }
+
+    if (slide.type === "mbti-intro") {
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="text-center space-y-6 sm:space-y-8 max-w-2xl bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10 overflow-hidden">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm sm:text-base text-muted-foreground/80">
+                이 톡방의 성격을 알아볼까요
+              </p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+                톡방 MBTI
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground/70">
+                채팅 패턴으로 분석한 톡방의 성격 유형
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <SwipeHint label="위로 스와이프하여 MBTI 보기" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "mbti" && slide.content) {
+      const mbti = slide.content;
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="text-center space-y-6 sm:space-y-8 max-w-2xl bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-2 ring-primary/20">
+              <span className="text-3xl font-bold text-primary">
+                {mbti.type}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm sm:text-base text-muted-foreground/80">
+                {mbti.description}
+              </p>
+            </div>
+
+            <div className="pt-4 space-y-2">
+              <p className="text-xs sm:text-sm text-muted-foreground/70 font-medium">
+                주요 특징
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {mbti.traits.map((trait) => (
+                  <div
+                    key={trait}
+                    className="rounded-xl bg-background/35 px-4 py-3 text-left"
+                  >
+                    <p className="text-sm sm:text-base">{trait}</p>
                   </div>
-                  <div className="shrink-0 rounded-full bg-background/25 px-2 py-1">
-                    <span className="text-[11px] text-muted-foreground/80 tabular-nums">
-                      {fortuneCards.length.toLocaleString()}장
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
-          <div className="flex-1 px-4 sm:px-6 pb-3 overflow-hidden relative z-10">
-            <div
-              className="max-w-2xl mx-auto h-full overflow-auto overscroll-contain space-y-3"
-              data-embla-no-drag="true"
-            >
-              {fortuneCards.map((t, idx) => (
-                <Card
-                  key={`${t.alias}-${idx}`}
-                  className={[
-                    "relative overflow-hidden rounded-2xl border ring-1",
-                    "bg-zinc-950/70 backdrop-blur-md",
-                    getFortuneTheme(`${t.alias}-${t.name}`).ring,
-                  ].join(" ")}
-                >
+        </div>
+      );
+    }
+
+    if (slide.type === "group-fortune-intro") {
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="text-center space-y-6 sm:space-y-8 max-w-2xl bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10 overflow-hidden">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm sm:text-base text-muted-foreground/80">
+                톡방 전체의 내년을 예언해볼까요
+              </p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+                단체 운세
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground/70">
+                올해의 기록으로 본 내년의 힌트
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <SwipeHint label="위로 스와이프하여 운세 보기" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "group-fortune" && slide.content) {
+      const fortune = slide.content;
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="text-center space-y-6 sm:space-y-8 max-w-2xl bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10">
+            <div className="space-y-4">
+              <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap">
+                {fortune.group}
+              </p>
+            </div>
+
+            <div className="pt-4 space-y-2">
+              <p className="text-xs sm:text-sm text-muted-foreground/70 font-medium">
+                키워드
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {fortune.keywords.map((keyword) => (
                   <div
-                    className={[
-                      "pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full blur-2xl",
-                      "bg-linear-to-br",
-                      getFortuneTheme(`${t.alias}-${t.name}`).glow,
-                    ].join(" ")}
-                    aria-hidden="true"
-                  />
+                    key={keyword}
+                    className="rounded-full bg-primary/10 px-4 py-2 text-sm ring-1 ring-primary/20"
+                  >
+                    {keyword}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "hot-topics-intro") {
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="text-center space-y-6 sm:space-y-8 max-w-2xl bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10 overflow-hidden">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm sm:text-base text-muted-foreground/80">
+                올해 가장 많이 이야기한 주제는
+              </p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+                핫토픽
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground/70">
+                채팅에서 자주 언급된 화제들
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <SwipeHint label="위로 스와이프하여 핫토픽 보기" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "hot-topics" && slide.content) {
+      const hotTopics = slide.content.slice(0, 3);
+      return (
+        <div className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 shrink-0 w-full relative">
+          <div className="w-full max-w-2xl space-y-4 bg-card/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 relative z-10">
+            <div className="text-center space-y-2 mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                핫토픽
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground/70">
+                올해 가장 많이 이야기한 주제들
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {hotTopics.map((topic, idx) => (
+                <Card
+                  key={topic.topic}
+                  className="relative overflow-hidden rounded-2xl border ring-1 bg-zinc-950/70 backdrop-blur-md"
+                >
                   <CardHeader className="pb-2 px-4 pt-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="text-base sm:text-lg tracking-tight truncate">
-                          {t.name}{" "}
-                          <span className="text-muted-foreground/70 text-sm font-normal">
-                            ({t.alias})
-                          </span>
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                          올해의 기록으로 본 내년의 힌트
-                        </CardDescription>
-                      </div>
-                      <div
-                        className={[
-                          "shrink-0 rounded-full px-2 py-1 text-[11px] tabular-nums",
-                          getFortuneTheme(`${t.alias}-${t.name}`).label,
-                        ].join(" ")}
-                      >
+                      <CardTitle className="text-base sm:text-lg tracking-tight">
+                        {topic.topic}
+                      </CardTitle>
+                      <div className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[11px] tabular-nums">
                         #{idx + 1}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
-                    <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-foreground/95">
-                      {t.prediction}
+                    <p className="text-sm sm:text-base leading-relaxed text-foreground/95">
+                      {topic.description}
                     </p>
                   </CardContent>
                 </Card>
@@ -1588,11 +1954,35 @@ export default function ResultsPage({
           </div>
         </div>
       </div>
+
+      {/* 위/아래 섹션 이동 버튼(스와이프 보조) */}
+      <div className="absolute right-3 top-14 z-30 flex flex-col gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-10 w-10 rounded-full p-0"
+          onClick={() => emblaApi?.scrollPrev()}
+          disabled={!emblaApi || currentSlide <= 0}
+          aria-label="이전 섹션"
+        >
+          <ArrowUp className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-10 w-10 rounded-full p-0"
+          onClick={() => emblaApi?.scrollNext()}
+          disabled={!emblaApi || currentSlide >= totalSlides - 1}
+          aria-label="다음 섹션"
+        >
+          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
       <div className="overflow-hidden h-full relative z-10" ref={emblaRef}>
         <div className="flex flex-col h-full">
-          {slides.map((slide, index) => (
-            <div key={index} className="shrink-0 w-full h-screen">
-              {renderSlide(slide, index)}
+          {slides.map((slide) => (
+            <div key={slide.id} className="shrink-0 w-full h-screen">
+              {renderSlide(slide)}
             </div>
           ))}
         </div>

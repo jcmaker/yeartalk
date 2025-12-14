@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 const rand = (min: number, max: number): number =>
   Math.random() * (max - min) + min;
@@ -179,7 +179,7 @@ function createFirework(
       }
       ctx.strokeStyle = this.color;
       ctx.lineWidth = this.size;
-      ctx.lineCap = 'round';
+      ctx.lineCap = "round";
       ctx.stroke();
       ctx.restore();
     },
@@ -187,7 +187,7 @@ function createFirework(
 }
 
 function getValueByRange(range: { min: number; max: number } | number): number {
-  if (typeof range === 'number') {
+  if (typeof range === "number") {
     return range;
   }
   return rand(range.min, range.max);
@@ -200,8 +200,8 @@ function getColor(color: string | string[] | undefined): string {
   return color ?? randColor();
 }
 
-type FireworksBackgroundProps = Omit<React.ComponentProps<'div'>, 'color'> & {
-  canvasProps?: React.ComponentProps<'canvas'>;
+type FireworksBackgroundProps = Omit<React.ComponentProps<"div">, "color"> & {
+  canvasProps?: React.ComponentProps<"canvas">;
   population?: number;
   color?: string | string[];
   fireworkSpeed?: { min: number; max: number } | number;
@@ -230,7 +230,7 @@ function FireworksBackground({
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let maxX = window.innerWidth;
@@ -246,7 +246,7 @@ function FireworksBackground({
       canvas.width = maxX;
       canvas.height = maxY;
     };
-    window.addEventListener('resize', setCanvasSize);
+    window.addEventListener("resize", setCanvasSize);
 
     const explosions: ParticleType[] = [];
     const fireworks: FireworkType[] = [];
@@ -331,11 +331,11 @@ function FireworksBackground({
       );
     };
 
-    container.addEventListener('click', handleClick);
+    container.addEventListener("click", handleClick);
 
     return () => {
-      window.removeEventListener('resize', setCanvasSize);
-      container.removeEventListener('click', handleClick);
+      window.removeEventListener("resize", setCanvasSize);
+      container.removeEventListener("click", handleClick);
       cancelAnimationFrame(animationFrameId);
     };
   }, [
@@ -351,13 +351,13 @@ function FireworksBackground({
     <div
       ref={containerRef}
       data-slot="fireworks-background"
-      className={cn('relative size-full overflow-hidden', className)}
+      className={cn("relative size-full overflow-hidden", className)}
       {...props}
     >
       <canvas
         {...canvasProps}
         ref={canvasRef}
-        className={cn('absolute inset-0 size-full', canvasProps?.className)}
+        className={cn("absolute inset-0 size-full", canvasProps?.className)}
       />
     </div>
   );

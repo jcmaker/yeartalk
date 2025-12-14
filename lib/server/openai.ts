@@ -1,6 +1,6 @@
 import OpenAI from "openai";
-import type { RoomStatsData, RoomAIData } from "@/types/analysis";
 import { OPENAI_MODEL } from "@/config/limits";
+import type { RoomAIData, RoomStatsData } from "@/types/analysis";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,7 +9,7 @@ const openai = new OpenAI({
 export async function generateAISummary(
   stats: RoomStatsData,
   participants: Array<{ displayName: string; alias: string }>,
-  title?: string
+  title?: string,
 ): Promise<RoomAIData> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not set");
@@ -40,7 +40,7 @@ ${participantNamesList}
 ${participantData
   .map(
     (p) =>
-      `- ${p.name}: 메시지 ${p.messages}개, 웃음 ${p.laughs}회, 울음 ${p.cries}회, 첨부파일 ${p.attachments}개`
+      `- ${p.name}: 메시지 ${p.messages}개, 웃음 ${p.laughs}회, 울음 ${p.cries}회, 첨부파일 ${p.attachments}개`,
   )
   .join("\n")}
 
@@ -120,10 +120,10 @@ ${participantData
     // Validate participant names
     const validNames = new Set(participantData.map((p) => p.name));
     const invalidAwards = parsed.awards.filter(
-      (a) => !validNames.has(a.participant)
+      (a) => !validNames.has(a.participant),
     );
     const invalidFortune = parsed.fortune.filter(
-      (f) => !validNames.has(f.participant)
+      (f) => !validNames.has(f.participant),
     );
 
     if (invalidAwards.length > 0 || invalidFortune.length > 0) {
@@ -135,7 +135,7 @@ ${participantData
           // Find closest match or use first participant
           const match = participantData.find(
             (p) =>
-              p.name.includes(a.participant) || a.participant.includes(p.name)
+              p.name.includes(a.participant) || a.participant.includes(p.name),
           );
           return {
             ...a,
@@ -148,7 +148,7 @@ ${participantData
         if (!validNames.has(f.participant)) {
           const match = participantData.find(
             (p) =>
-              p.name.includes(f.participant) || f.participant.includes(p.name)
+              p.name.includes(f.participant) || f.participant.includes(p.name),
           );
           return {
             ...f,

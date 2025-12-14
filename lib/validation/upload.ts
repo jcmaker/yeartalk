@@ -7,4 +7,3 @@ export const uploadRequestSchema = z.object({
 });
 
 export type UploadRequest = z.infer<typeof uploadRequestSchema>;
-

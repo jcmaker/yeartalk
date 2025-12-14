@@ -58,4 +58,19 @@ export interface RoomAIData {
   recap: string;
   fortune: Fortune[];
   highlights: string[];
+  // AI 엔터테인먼트 (선택적)
+  mbti?: {
+    type: string;
+    description: string;
+    traits: string[];
+  };
+  groupFortune?: {
+    group: string;
+    keywords: string[];
+  };
+  hotTopics?: Array<{
+    topic: string;
+    description: string;
+    frequency?: number;
+  }>;
 }

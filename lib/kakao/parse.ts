@@ -1,5 +1,5 @@
-import type { ChatMessage, ParsedChat } from "@/types/analysis";
 import { parseSeoulLocalDateTimeToIsoUtc } from "@/lib/kakao/time";
+import type { ChatMessage, ParsedChat } from "@/types/analysis";
 
 // Support multiple date formats:
 // Format 1: YYYY.MM.DD. 오전/오후 H:MM, Name : Message
@@ -18,7 +18,7 @@ function parseKoreanTime(
   day: string,
   ampm: string,
   hour: string,
-  minute: string
+  minute: string,
 ): string | null {
   try {
     let h = Number.parseInt(hour, 10);
@@ -72,7 +72,7 @@ export function parseKakaoTxt(content: string): ParsedChat {
         exportedAt = line;
         continue;
       }
-      if (line.match(/^\d{4}[\.년]\s*\d{1,2}[\.월]/)) {
+      if (line.match(/^\d{4}[.년]\s*\d{1,2}[.월]/)) {
         exportedAt = line;
         continue;
       }
@@ -106,7 +106,7 @@ export function parseKakaoTxt(content: string): ParsedChat {
         day.padStart(2, "0"),
         ampm,
         hour,
-        minute
+        minute,
       );
 
       if (ts) {
@@ -152,7 +152,6 @@ export function parseKakaoTxt(content: string): ParsedChat {
         kind: "message",
         text: line,
       });
-      continue;
     }
 
     // Unknown line - skip safely (defensive parsing)

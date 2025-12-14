@@ -1,5 +1,5 @@
-import type { Award, ChatMessage, ParticipantStats } from "@/types/analysis";
 import { getSeoulDateKey, getSeoulHour } from "@/lib/kakao/time";
+import type { Award, ChatMessage, ParticipantStats } from "@/types/analysis";
 
 const LAUGH_PATTERN = /ㅋㅋ|ㅎㅎ|🤣|😂/;
 const PHOTO_PATTERN = /^사진(?:\s+(\d+)장)?$/;
@@ -56,7 +56,7 @@ const compareCommon = (
   a: PersonAgg,
   b: PersonAgg,
   primaryScoreA: number,
-  primaryScoreB: number
+  primaryScoreB: number,
 ) => {
   if (primaryScoreA !== primaryScoreB) return primaryScoreB - primaryScoreA;
   if (a.totalMessages !== b.totalMessages)
@@ -94,14 +94,19 @@ export const computeFixedAwards = (args: {
   for (const p of people) byName.set(p.displayName, p);
 
   const baseMessages = args.messages
-    .filter((m) => m.kind === "message" && m.author && m.ts)
+    .filter(
+      (
+        m,
+      ): m is (typeof args.messages)[number] & { author: string; ts: string } =>
+        m.kind === "message" && typeof m.author === "string" && Boolean(m.ts),
+    )
     .map((m) => {
       const ms = safeParseMs(m.ts);
       return ms
         ? {
             tsIso: m.ts,
             ms,
-            author: m.author!,
+            author: m.author,
             text: m.text ?? "",
           }
         : null;
@@ -155,7 +160,7 @@ export const computeFixedAwards = (args: {
 
   const pickWinner = (
     score: (p: PersonAgg) => number,
-    extraCompare?: (a: PersonAgg, b: PersonAgg) => number
+    extraCompare?: (a: PersonAgg, b: PersonAgg) => number,
   ) => {
     if (people.length === 0) return null;
     return [...people].sort((a, b) => {
@@ -185,12 +190,12 @@ export const computeFixedAwards = (args: {
       const rb = b.totalMessages > 0 ? b.nightMessages / b.totalMessages : 0;
       if (ra !== rb) return rb - ra;
       return 0;
-    }
+    },
   );
 
   const toAward = (
     winner: PersonAgg | null,
-    template: { title: string; description: string }
+    template: { title: string; description: string },
   ): Award => ({
     participant: winner?.alias || winner?.displayName || "",
     title: template.title,

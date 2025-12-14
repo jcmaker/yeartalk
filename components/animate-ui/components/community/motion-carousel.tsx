@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { motion, type Transition } from 'motion/react';
-import { EmblaOptionsType, EmblaCarouselType } from 'embla-carousel';
-import useEmblaCarousel from 'embla-carousel-react';
-import { Button } from '@/components/animate-ui/components/buttons/button';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, type Transition } from "motion/react";
+import * as React from "react";
+import { Button } from "@/components/animate-ui/components/buttons/button";
 
 type PropType = {
   slides: number[];
@@ -29,7 +29,7 @@ type DotButtonProps = {
 };
 
 const transition: Transition = {
-  type: 'spring',
+  type: "spring",
   stiffness: 240,
   damping: 24,
   mass: 1,
@@ -51,29 +51,35 @@ const useEmblaControls = (
   const onPrev = React.useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const onNext = React.useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
-  const updateSelectionState = (api: EmblaCarouselType) => {
+  const updateSelectionState = React.useCallback((api: EmblaCarouselType) => {
     setSelectedIndex(api.selectedScrollSnap());
     setPrevDisabled(!api.canScrollPrev());
     setNextDisabled(!api.canScrollNext());
-  };
-
-  const onInit = React.useCallback((api: EmblaCarouselType) => {
-    setScrollSnaps(api.scrollSnapList());
-    updateSelectionState(api);
   }, []);
 
-  const onSelect = React.useCallback((api: EmblaCarouselType) => {
-    updateSelectionState(api);
-  }, []);
+  const onInit = React.useCallback(
+    (api: EmblaCarouselType) => {
+      setScrollSnaps(api.scrollSnapList());
+      updateSelectionState(api);
+    },
+    [updateSelectionState],
+  );
+
+  const onSelect = React.useCallback(
+    (api: EmblaCarouselType) => {
+      updateSelectionState(api);
+    },
+    [updateSelectionState],
+  );
 
   React.useEffect(() => {
     if (!emblaApi) return;
 
     onInit(emblaApi);
-    emblaApi.on('reInit', onInit).on('select', onSelect);
+    emblaApi.on("reInit", onInit).on("select", onSelect);
 
     return () => {
-      emblaApi.off('reInit', onInit).off('select', onSelect);
+      emblaApi.off("reInit", onInit).off("select", onSelect);
     };
   }, [emblaApi, onInit, onSelect]);
 
@@ -135,9 +141,9 @@ function MotionCarousel(props: PropType) {
         </Button>
 
         <div className="flex flex-wrap justify-end items-center gap-2">
-          {scrollSnaps.map((_, index) => (
+          {scrollSnaps.map((snap, index) => (
             <DotButton
-              key={index}
+              key={snap}
               label={`Slide ${index + 1}`}
               selected={index === selectedIndex}
               onClick={() => onDotClick(index)}
@@ -174,7 +180,7 @@ function DotButton({ selected = false, label, onClick }: DotButtonProps) {
         animate={{
           opacity: selected ? 1 : 0,
           scale: selected ? 1 : 0,
-          filter: selected ? 'blur(0)' : 'blur(4px)',
+          filter: selected ? "blur(0)" : "blur(4px)",
         }}
         transition={transition}
       >

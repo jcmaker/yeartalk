@@ -10,5 +10,7 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
+// 개발 모드에서도 싱글톤 유지
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

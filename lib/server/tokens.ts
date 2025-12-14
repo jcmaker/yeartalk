@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 
 export function generateShareSlug(): string {
   return randomBytes(24).toString("base64url");
@@ -7,4 +7,3 @@ export function generateShareSlug(): string {
 export function generateDeleteToken(): string {
   return randomBytes(24).toString("base64url");
 }
-

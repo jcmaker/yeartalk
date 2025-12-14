@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { easeOut, motion } from 'motion/react';
-import * as React from 'react';
-import { Github, Linkedin, Twitter } from 'lucide-react';
+import { Github, Linkedin, Twitter } from "lucide-react";
+import { easeOut, motion } from "motion/react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 
 export interface FlipCardData {
   name: string;
@@ -30,7 +30,7 @@ export function FlipCard({ data }: FlipCardProps) {
   const [isFlipped, setIsFlipped] = React.useState(false);
 
   const isTouchDevice =
-    typeof window !== 'undefined' && 'ontouchstart' in window;
+    typeof window !== "undefined" && "ontouchstart" in window;
 
   const handleClick = () => {
     if (isTouchDevice) setIsFlipped(!isFlipped);
@@ -44,25 +44,38 @@ export function FlipCard({ data }: FlipCardProps) {
     if (!isTouchDevice) setIsFlipped(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setIsFlipped((prev) => !prev);
+    }
+  };
+
   const cardVariants = {
     front: { rotateY: 0, transition: { duration: 0.5, ease: easeOut } },
     back: { rotateY: 180, transition: { duration: 0.5, ease: easeOut } },
   };
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: This container includes nested interactive elements (links/buttons), so we keep a div with proper ARIA/keyboard handling.
     <div
       className="mt-2 relative w-40 h-60 md:w-60 md:h-80 perspective-1000 cursor-pointer mx-auto"
+      role="button"
+      tabIndex={0}
+      aria-label={`${data.name} 카드 뒤집기`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* FRONT: Profile */}
       <motion.div
         className="absolute inset-0 backface-hidden rounded-md border-2 border-foreground/20 px-4 py-6 flex flex-col items-center justify-center bg-gradient-to-br from-muted via-background to-muted text-center"
-        animate={isFlipped ? 'back' : 'front'}
+        animate={isFlipped ? "back" : "front"}
         variants={cardVariants}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: "preserve-3d" }}
       >
+        {/* biome-ignore lint/performance/noImgElement: this component can render external image URLs */}
         <img
           src={data.image}
           alt={data.name}
@@ -76,9 +89,9 @@ export function FlipCard({ data }: FlipCardProps) {
       <motion.div
         className="absolute inset-0 backface-hidden rounded-md border-2 border-foreground/20 px-4 py-6 flex flex-col justify-between items-center gap-y-4 bg-gradient-to-tr from-muted via-background to-muted "
         initial={{ rotateY: 180 }}
-        animate={isFlipped ? 'front' : 'back'}
+        animate={isFlipped ? "front" : "back"}
         variants={cardVariants}
-        style={{ transformStyle: 'preserve-3d', rotateY: 180 }}
+        style={{ transformStyle: "preserve-3d", rotateY: 180 }}
       >
         <p className="text-xs md:text-sm text-muted-foreground text-center">
           {data.bio}

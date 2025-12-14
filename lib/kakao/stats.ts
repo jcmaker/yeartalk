@@ -1,11 +1,10 @@
+import { computeFixedAwards } from "@/lib/kakao/awards";
+import { getSeoulHour, getSeoulWeekdayIndex } from "@/lib/kakao/time";
 import type {
   ChatMessage,
   ParticipantStats,
-  ActivityStats,
   RoomStatsData,
 } from "@/types/analysis";
-import { computeFixedAwards } from "@/lib/kakao/awards";
-import { getSeoulHour, getSeoulWeekdayIndex } from "@/lib/kakao/time";
 
 function countTokens(text: string, patterns: RegExp[]): number {
   let count = 0;
@@ -20,7 +19,7 @@ function countTokens(text: string, patterns: RegExp[]): number {
 
 export function computeStats(
   messages: ChatMessage[],
-  participants: string[]
+  participants: string[],
 ): RoomStatsData {
   const participantMap = new Map<string, ParticipantStats>();
   const byHour: Record<number, number> = {};
@@ -48,7 +47,8 @@ export function computeStats(
     if (msg.kind === "attachment") {
       totalAttachments++;
       if (msg.author && participantMap.has(msg.author)) {
-        const stats = participantMap.get(msg.author)!;
+        const stats = participantMap.get(msg.author);
+        if (!stats) continue;
         stats.attachmentCount++;
       }
       continue;

@@ -44,7 +44,7 @@ export const parseSeoulLocalDateTimeToIsoUtc = (args: {
       args.hour - 9,
       args.minute,
       0,
-      0
+      0,
     );
     const date = new Date(utcMs);
     if (Number.isNaN(date.getTime())) return null;

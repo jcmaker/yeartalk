@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const { slug } = await params;
@@ -19,8 +19,11 @@ export async function GET(
 
     if (!room) {
       return NextResponse.json(
-        { ok: false, error: { code: "NOT_FOUND", message: "방을 찾을 수 없습니다" } },
-        { status: 404 }
+        {
+          ok: false,
+          error: { code: "NOT_FOUND", message: "방을 찾을 수 없습니다" },
+        },
+        { status: 404 },
       );
     }
 
@@ -37,7 +40,7 @@ export async function GET(
             message: `방 상태: ${statusMessages[room.status] || room.status}`,
           },
         },
-        { status: 202 }
+        { status: 202 },
       );
     }
 
@@ -69,16 +72,19 @@ export async function GET(
     return NextResponse.json(
       {
         ok: false,
-        error: { code: "INTERNAL_ERROR", message: "예기치 않은 오류가 발생했습니다" },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "예기치 않은 오류가 발생했습니다",
+        },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const { slug } = await params;
@@ -90,7 +96,7 @@ export async function DELETE(
           ok: false,
           error: { code: "MISSING_TOKEN", message: "삭제 토큰이 필요합니다" },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -101,8 +107,11 @@ export async function DELETE(
 
     if (!room) {
       return NextResponse.json(
-        { ok: false, error: { code: "NOT_FOUND", message: "방을 찾을 수 없습니다" } },
-        { status: 404 }
+        {
+          ok: false,
+          error: { code: "NOT_FOUND", message: "방을 찾을 수 없습니다" },
+        },
+        { status: 404 },
       );
     }
 
@@ -110,9 +119,12 @@ export async function DELETE(
       return NextResponse.json(
         {
           ok: false,
-          error: { code: "INVALID_TOKEN", message: "유효하지 않은 삭제 토큰입니다" },
+          error: {
+            code: "INVALID_TOKEN",
+            message: "유효하지 않은 삭제 토큰입니다",
+          },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -127,10 +139,12 @@ export async function DELETE(
     return NextResponse.json(
       {
         ok: false,
-        error: { code: "INTERNAL_ERROR", message: "예기치 않은 오류가 발생했습니다" },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "예기치 않은 오류가 발생했습니다",
+        },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
