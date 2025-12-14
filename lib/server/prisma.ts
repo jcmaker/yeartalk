@@ -10,7 +10,9 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-// 개발 모드에서도 싱글톤 유지
-if (process.env.NODE_ENV !== "production") {
+// Always cache the Prisma client globally to prevent multiple instances
+// This prevents "prepared statement already exists" errors in Next.js
+// development (hot reload) and ensures singleton pattern in all environments
+if (!globalForPrisma.prisma) {
   globalForPrisma.prisma = prisma;
 }
