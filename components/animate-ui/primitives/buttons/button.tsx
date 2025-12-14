@@ -14,20 +14,44 @@ type ButtonProps = WithAsChild<
   }
 >;
 
-function Button({
-  hoverScale = 1.05,
-  tapScale = 0.95,
-  asChild = false,
-  ...props
-}: ButtonProps) {
-  const Component = asChild ? Slot : motion.button;
+function Button(props: ButtonProps) {
+  const hoverScale = props.hoverScale ?? 1.05;
+  const tapScale = props.tapScale ?? 0.95;
+
+  if (props.asChild === true) {
+    const {
+      asChild: _asChild,
+      hoverScale: _hoverScale,
+      tapScale: _tapScale,
+      ...rest
+    } = props;
+
+    return (
+      <Slot
+        whileTap={{ scale: tapScale }}
+        whileHover={{ scale: hoverScale }}
+        {...rest}
+      >
+        {props.children}
+      </Slot>
+    );
+  }
+
+  const {
+    asChild: _asChild,
+    hoverScale: _hoverScale,
+    tapScale: _tapScale,
+    ...rest
+  } = props;
 
   return (
-    <Component
+    <motion.button
       whileTap={{ scale: tapScale }}
       whileHover={{ scale: hoverScale }}
-      {...props}
-    />
+      {...rest}
+    >
+      {props.children}
+    </motion.button>
   );
 }
 

@@ -72,11 +72,11 @@ const SYSTEM_PROMPT = `당신은 재미있고 유머러스한 채팅 로그 분�
 /**
  * OpenAI API 호출 헬퍼 (재시도 로직 포함)
  */
-async function callOpenAIWithRetry(
+async function callOpenAIWithRetry<T>(
   prompt: string,
-  schema: z.ZodSchema<unknown>,
+  schema: z.ZodSchema<T>,
   retries = 1,
-): Promise<unknown> {
+): Promise<T> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const completion = await openai.chat.completions.create({
